@@ -1,6 +1,4 @@
 package co.mobile.dejavu.retrofitexampletest;
-
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
@@ -8,12 +6,20 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import co.mobile.dejavu.retrofitexampletest.Interface.IJsonPlaceHolderApi;
 import co.mobile.dejavu.retrofitexampletest.Interface.INasaApi;
+import co.mobile.dejavu.retrofitexampletest.Interface.IWishList;
 import co.mobile.dejavu.retrofitexampletest.Model.Apod;
+import co.mobile.dejavu.retrofitexampletest.Model.BodyWishList;
 import co.mobile.dejavu.retrofitexampletest.Model.Posts;
+import co.mobile.dejavu.retrofitexampletest.Model.ResponseWishList;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -32,7 +38,8 @@ public class MainActivity extends AppCompatActivity {
         imagPlanet = (ImageView) findViewById(R.id.imagPlanet);
         jsonText = (TextView) findViewById(R.id.jsonText);
         //getPosts();
-        getNasa();
+        //getNasa();
+        getWishList();
     }
 
     private void getPosts() {
@@ -90,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
                 Glide.with(getApplicationContext()).load(apod.getUrl()).into(imagPlanet);
 
             }
-
             @Override
             public void onFailure(Call<Apod> call, Throwable t) {
                 jsonText.setText(t.getMessage());
@@ -98,4 +104,51 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+    private void getWishList(){
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://cirene.udea.edu.co/services_olib/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        final IWishList wishList = retrofit.create(IWishList.class);
+
+        BodyWishList bodyWishList= new BodyWishList("","");
+        JSONObject jsonObject = new JSONObject();
+        JSONArray bodyWishListArrayList = new JSONArray();
+        try {
+            jsonObject = new JSONObject(bodyWishList.toString());
+            bodyWishListArrayList= new JSONArray(jsonObject);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        Call<List<ResponseWishList>> call =wishList.postResponseWishList(bodyWishListArrayList);
+        call.enqueue(new Callback<List<ResponseWishList>>() {
+            @Override
+            public void onResponse(Call<List<ResponseWishList>> call, Response<List<ResponseWishList>> response) {
+                if (!response.isSuccessful()) {
+                    jsonText.setText("Code: " + String.valueOf(response.code()));
+                    return;
+                }
+                List<ResponseWishList> wishLists = response.body();
+                for (ResponseWishList responseWishList : wishLists){
+                    String contentWishList=responseWishList.getTitlenos();
+                    jsonText.append(contentWishList);
+
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ResponseWishList>> call, Throwable t) {
+                jsonText.setText(t.getMessage());
+
+            }
+        });
+
+    }
+
+
+
 }
