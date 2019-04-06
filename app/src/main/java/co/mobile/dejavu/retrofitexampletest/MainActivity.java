@@ -5,10 +5,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getWishList(){
+
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://cirene.udea.edu.co/services_olib/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -113,18 +115,11 @@ public class MainActivity extends AppCompatActivity {
         final IWishList wishList = retrofit.create(IWishList.class);
 
         BodyWishList bodyWishList= new BodyWishList("","");
-        JSONObject jsonObject = new JSONObject();
-        JSONArray bodyWishListArrayList = new JSONArray();
-        try {
-            jsonObject = new JSONObject(bodyWishList.toString());
-            bodyWishListArrayList= new JSONArray(jsonObject);
 
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        List<BodyWishList> bodyWishListList = new ArrayList<>();
+        bodyWishListList.add(bodyWishList);
 
-
-        Call<List<ResponseWishList>> call =wishList.postResponseWishList(bodyWishListArrayList);
+        Call<List<ResponseWishList>> call =wishList.postResponseWishList(bodyWishListList);
         call.enqueue(new Callback<List<ResponseWishList>>() {
             @Override
             public void onResponse(Call<List<ResponseWishList>> call, Response<List<ResponseWishList>> response) {
@@ -132,23 +127,27 @@ public class MainActivity extends AppCompatActivity {
                     jsonText.setText("Code: " + String.valueOf(response.code()));
                     return;
                 }
+
+                Gson gson = new Gson();
+                JsonParser jsonParser = new JsonParser();
+                JsonArray jsonArray=new JsonArray();
+                JsonObject jsonObject= new JsonObject();
+
                 List<ResponseWishList> wishLists = response.body();
                 for (ResponseWishList responseWishList : wishLists){
-                    String contentWishList=responseWishList.getTitlenos();
-                    jsonText.append(contentWishList);
+                    String contentWishList=responseWishList.getRespuesta();
+                    jsonArray = (JsonArray) jsonParser.parse(contentWishList);
+                    jsonObject = jsonArray.get(1).getAsJsonObject();
+                    jsonText.setText(jsonObject.get("titulo").getAsString());
 
                 }
             }
-
             @Override
             public void onFailure(Call<List<ResponseWishList>> call, Throwable t) {
                 jsonText.setText(t.getMessage());
 
             }
         });
-
     }
-
-
 
 }
